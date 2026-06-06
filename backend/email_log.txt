@@ -1,0 +1,8 @@
+6/5/2026, 11:49:57 AM: Attempting mail to viru18702@gmail.com | Subject: Your Placement Tracker Verification Code
+6/5/2026, 11:49:59 AM: FAIL: Failed to send email to viru18702@gmail.com: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to
+535 5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-37133082519sm630349a91.1 - gsmtp
+6/5/2026, 12:10:22 PM: Attempting mail to viru18702@gmail.com | Subject: Your Placement Tracker Verification Code
+6/5/2026, 12:10:23 PM: FAIL: Failed to send email to viru18702@gmail.com: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to
+535 5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-36f68b03ef6sm5368748a91.0 - gsmtp
+6/5/2026, 12:16:19 PM: Attempting mail to krishvagdevi1234@gmail.com | Subject: Your Placement Tracker Verification Code
+6/5/2026, 12:16:24 PM: SUCCESS: Mail sent to krishvagdevi1234@gmail.com
