@@ -5,7 +5,7 @@ import Job from '../models/Job.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { protect, adminOnly, studentOnly } from '../middlewares/auth.js';
-import { sendInterviewAlert, sendCustomEmail } from '../services/emailService.js';
+import { sendInterviewAlert, sendCustomEmail, sendInterviewReminder } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -185,6 +185,7 @@ router.get('/admin', protect, adminOnly, async (req, res) => {
         status: app.status,
         interviewDate: app.interviewDate,
         dateApplied: app.dateApplied,
+        reminderSent: app.reminderSent,
         position: job ? job.position : 'Unknown Position',
         companyName: job ? job.companyName : 'Unknown Company',
         jobSkills: job ? job.requiredSkills.join(', ') : '',
@@ -443,6 +444,52 @@ router.post('/bulk-email', protect, adminOnly, async (req, res) => {
     res.json({ message: `Successfully sent messages to ${successCount} students.` });
   } catch (error) {
     console.error('Bulk email error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Admin manually triggers interview reminder email
+// @route   POST /api/applications/:id/send-reminder
+// @access  Private (Admin only)
+router.post('/:id/send-reminder', protect, adminOnly, async (req, res) => {
+  try {
+    const application = await Application.findById(req.params.id)
+      .populate('jobId')
+      .populate({
+        path: 'studentId',
+        populate: { path: 'userId' }
+      });
+
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    if (application.status !== 'interview') {
+      return res.status(400).json({ message: 'Can only send reminders for applications scheduled for interviews' });
+    }
+
+    const email = application.studentId?.userId?.email;
+    const fullName = application.studentId?.fullName;
+    const company = application.jobId?.companyName;
+    const position = application.jobId?.position;
+    const dateTime = application.interviewDate ? new Date(application.interviewDate).toLocaleString() : 'tomorrow';
+
+    if (!email || !fullName || !company || !position) {
+      return res.status(400).json({ message: 'Application lacks sufficient details to send reminder email.' });
+    }
+
+    console.log(`[Manual Reminder] Sending interview reminder email to ${email} for position ${position} at ${company}...`);
+    const success = await sendInterviewReminder(email, fullName, company, position, dateTime);
+
+    if (success) {
+      application.reminderSent = true;
+      await application.save();
+      return res.json({ message: 'Interview reminder successfully sent!' });
+    } else {
+      return res.status(500).json({ message: 'Failed to send reminder email. Please check email configuration.' });
+    }
+  } catch (error) {
+    console.error('Manual send-reminder error:', error);
     res.status(500).json({ message: error.message });
   }
 });

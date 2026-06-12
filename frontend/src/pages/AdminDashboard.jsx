@@ -34,7 +34,10 @@ import {
   Lock,
   User,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -93,6 +96,12 @@ const AdminDashboard = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // Sorting and Filtering States for Applications
+  const [appSearchQuery, setAppSearchQuery] = useState('');
+  const [appStatusFilter, setAppStatusFilter] = useState('all');
+  const [appSortField, setAppSortField] = useState('dateApplied');
+  const [appSortDirection, setAppSortDirection] = useState('desc');
 
   const fetchDashboardData = async () => {
     try {
@@ -257,6 +266,17 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleSendReminder = async (appId) => {
+    try {
+      showToastMsg('Sending interview reminder...');
+      const { data } = await API.post(`/applications/${appId}/send-reminder`);
+      showToastMsg(data.message || 'Reminder sent successfully!');
+      fetchDashboardData();
+    } catch (err) {
+      showToastMsg(err.response?.data?.message || 'Failed to send reminder', true);
+    }
+  };
+
   // Delete Student
   const handleDeleteStudent = async () => {
     try {
@@ -340,6 +360,61 @@ const AdminDashboard = () => {
       }
     ]
   };
+
+  const handleHeaderClick = (field) => {
+    if (appSortField === field) {
+      setAppSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setAppSortField(field);
+      setAppSortDirection('asc');
+    }
+  };
+
+  const filteredAndSortedApplications = React.useMemo(() => {
+    // 1. Filter
+    let result = applications.filter((app) => {
+      const matchesSearch = 
+        (app.fullName || '').toLowerCase().includes(appSearchQuery.toLowerCase()) ||
+        (app.companyName || '').toLowerCase().includes(appSearchQuery.toLowerCase()) ||
+        (app.position || '').toLowerCase().includes(appSearchQuery.toLowerCase());
+      
+      const matchesStatus = appStatusFilter === 'all' ? true : app.status === appStatusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+
+    // 2. Sort
+    result.sort((a, b) => {
+      let valA, valB;
+
+      if (appSortField === 'candidate') {
+        valA = (a.fullName || '').toLowerCase();
+        valB = (b.fullName || '').toLowerCase();
+      } else if (appSortField === 'matchScore') {
+        valA = a.matchScore || 0;
+        valB = b.matchScore || 0;
+      } else if (appSortField === 'position') {
+        valA = (a.position || '').toLowerCase();
+        valB = (b.position || '').toLowerCase();
+      } else if (appSortField === 'company') {
+        valA = (a.companyName || '').toLowerCase();
+        valB = (b.companyName || '').toLowerCase();
+      } else if (appSortField === 'status') {
+        valA = (a.status || '').toLowerCase();
+        valB = (b.status || '').toLowerCase();
+      } else {
+        // default: dateApplied
+        valA = new Date(a.dateApplied || 0);
+        valB = new Date(b.dateApplied || 0);
+      }
+
+      if (valA < valB) return appSortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return appSortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [applications, appSearchQuery, appStatusFilter, appSortField, appSortDirection]);
 
   return (
     <div className="animate-fade-in">
@@ -470,20 +545,110 @@ const AdminDashboard = () => {
           {activeTab === 'apps' && (
             <div className="glass-card">
               <h3 className="mb-4" style={{ fontSize: '1.2rem', fontWeight: 700 }}>Incoming Applications Queue</h3>
+              
+              {/* Filter and Sort Control Bar */}
+              <div className="mb-4 animate-fade-in" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
+                <div style={{ position: 'relative', flex: '1 1 250px' }}>
+                  <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search by student, company, or role..."
+                    value={appSearchQuery}
+                    onChange={(e) => setAppSearchQuery(e.target.value)}
+                    className="form-control"
+                    style={{ paddingLeft: '2.75rem', borderRadius: '50px', fontSize: '0.9rem' }}
+                  />
+                </div>
+                
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', flex: '0 0 auto' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Status:</span>
+                  <select
+                    value={appStatusFilter}
+                    onChange={(e) => setAppStatusFilter(e.target.value)}
+                    className="form-control form-select"
+                    style={{ width: '150px', borderRadius: '50px', fontSize: '0.85rem', padding: '0.5rem 2rem 0.5rem 1rem' }}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="applied">Applied</option>
+                    <option value="interview">Interview</option>
+                    <option value="offered">Offered</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', flex: '0 0 auto' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Sort By:</span>
+                  <select
+                    value={appSortField}
+                    onChange={(e) => {
+                      setAppSortField(e.target.value);
+                      if (e.target.value === 'dateApplied') {
+                        setAppSortDirection('desc');
+                      } else {
+                        setAppSortDirection('asc');
+                      }
+                    }}
+                    className="form-control form-select"
+                    style={{ width: '160px', borderRadius: '50px', fontSize: '0.85rem', padding: '0.5rem 2rem 0.5rem 1rem' }}
+                  >
+                    <option value="dateApplied">Date Applied</option>
+                    <option value="company">Company Name</option>
+                    <option value="position">Position / Role</option>
+                    <option value="matchScore">Match Score</option>
+                    <option value="status">Status</option>
+                  </select>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setAppSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+                    className="btn btn-secondary"
+                    style={{ borderRadius: '50px', height: '38px', padding: '0 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}
+                  >
+                    {appSortDirection === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+                    <span style={{ marginLeft: '0.25rem', fontWeight: 600 }}>{appSortDirection.toUpperCase()}</span>
+                  </button>
+                </div>
+              </div>
+
               <div className="table-wrapper">
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Candidate</th>
-                      <th>Match Score</th>
-                      <th>Position</th>
-                      <th>Company</th>
-                      <th>Status</th>
+                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleHeaderClick('candidate')}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          Candidate 
+                          {appSortField === 'candidate' ? (appSortDirection === 'asc' ? <ArrowUp size={14} className="text-brand" /> : <ArrowDown size={14} className="text-brand" />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}
+                        </div>
+                      </th>
+                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleHeaderClick('matchScore')}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          Match Score 
+                          {appSortField === 'matchScore' ? (appSortDirection === 'asc' ? <ArrowUp size={14} className="text-brand" /> : <ArrowDown size={14} className="text-brand" />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}
+                        </div>
+                      </th>
+                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleHeaderClick('position')}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          Position 
+                          {appSortField === 'position' ? (appSortDirection === 'asc' ? <ArrowUp size={14} className="text-brand" /> : <ArrowDown size={14} className="text-brand" />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}
+                        </div>
+                      </th>
+                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleHeaderClick('company')}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          Company 
+                          {appSortField === 'company' ? (appSortDirection === 'asc' ? <ArrowUp size={14} className="text-brand" /> : <ArrowDown size={14} className="text-brand" />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}
+                        </div>
+                      </th>
+                      <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleHeaderClick('status')}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          Status 
+                          {appSortField === 'status' ? (appSortDirection === 'asc' ? <ArrowUp size={14} className="text-brand" /> : <ArrowDown size={14} className="text-brand" />) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}
+                        </div>
+                      </th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {applications.map((app) => (
+                    {filteredAndSortedApplications.map((app) => (
                       <tr key={app._id}>
                         <td>
                           <div className="bold">{app.fullName}</div>
@@ -530,18 +695,35 @@ const AdminDashboard = () => {
                         <td>{app.position}</td>
                         <td>{app.companyName}</td>
                         <td>
-                          <span className={`badge ${
-                            app.status === 'applied' ? 'badge-info' : 
-                            app.status === 'interview' ? 'badge-primary' : 
-                            app.status === 'offered' ? 'badge-success' : 
-                            app.status === 'rejected' ? 'badge-danger' : 
-                            'badge-secondary'
-                          }`}>
-                            {app.status}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' }}>
+                            <span className={`badge ${
+                              app.status === 'applied' ? 'badge-info' : 
+                              app.status === 'interview' ? 'badge-primary' : 
+                              app.status === 'offered' ? 'badge-success' : 
+                              app.status === 'rejected' ? 'badge-danger' : 
+                              'badge-secondary'
+                            }`}>
+                              {app.status}
+                            </span>
+                            {app.status === 'interview' && (
+                              <span style={{ fontSize: '0.7rem', color: app.reminderSent ? 'var(--color-success)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}>
+                                {app.reminderSent ? '🔔 Sent' : '🔕 No Reminder'}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            {app.status === 'interview' && (
+                              <button
+                                onClick={() => handleSendReminder(app._id)}
+                                className={`btn btn-sm ${app.reminderSent ? 'btn-secondary text-success' : 'btn-outline-brand'}`}
+                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                                title={app.reminderSent ? "Resend Reminder" : "Send Interview Reminder"}
+                              >
+                                {app.reminderSent ? 'Resend' : 'Remind'}
+                              </button>
+                            )}
                             <button
                               onClick={() => { setSelectedApp(app); setShowInterviewModal(true); }}
                               className="btn btn-secondary btn-sm"
@@ -569,8 +751,10 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </table>
-                {applications.length === 0 && (
-                  <div className="text-center p-4 text-secondary">No applications filed yet.</div>
+                {filteredAndSortedApplications.length === 0 && (
+                  <div className="text-center p-4 text-secondary">
+                    {applications.length === 0 ? "No applications filed yet." : "No applications match current search/filters."}
+                  </div>
                 )}
               </div>
             </div>
