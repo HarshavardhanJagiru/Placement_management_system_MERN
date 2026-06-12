@@ -4,29 +4,29 @@ A comprehensive, role-based web application designed to streamline campus recrui
 
 ---
 
-## 🌟 Key Features
+##  Key Features
 
-### 👨‍🎓 Student Portal
+###  Student Portal
 *   **Interactive Kanban Board**: A drag-and-drop tracker (using HTML5 Drag and Drop API) that enables students to visually update their recruitment pipelines (e.g., Saved, Applied, Interview, Offered, Rejected) with optimistic UI updates and validation checks.
 *   **Professional Profiles**: Profile management allowing students to list academic metrics (CGPA, Department), core skills, and upload resumes.
 *   **Direct Job Search**: Search and filter options for active corporate openings matching criteria like minimum CGPA requirements.
 *   **Notification Center**: Real-time alerts and in-app system notifications for schedule updates, offers, and deadlines.
 
-### 👩‍💼 Admin Portal (Placement Officer)
+###  Admin Portal (Placement Officer)
 *   **Recruitment Pipeline Dashboard**: Manage and track all job postings, applications, and student statuses.
 *   **Interactive Interview Calendar**: Complete calendar integration (powered by FullCalendar) displaying scheduled interviews.
 *   **Analytics & Visual Metrics**: Integrated visual reports (powered by Chart.js) providing a snapshot of placement success, student registrations by department, and hiring companies.
 *   **Batch Action Console**: Bulk email client permitting placement officers to filter candidates and broadcast announcements, schedule updates, or reminders.
 *   **Data Export**: Built-in CSV reports generator for student registry data.
 
-### ⚙️ Automation & Authentication
+###  Automation & Authentication
 *   **Background Reminder Daemon**: An active Node.js background process that polls the database to automatically trigger and send SMTP email alerts (via Nodemailer) to candidates with upcoming interviews scheduled within 24 hours.
 *   **OTP Email Verification**: Multi-step registration flow verifying email addresses via One-Time Passwords (OTP).
 *   **Role-Based Security**: API authorization enforced using JWT (JSON Web Tokens) and custom Express middlewares (`protect`, `adminOnly`, `studentOnly`).
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 *   **Frontend**: React (Vite), CSS3, Lucide Icons, Axios, Chart.js, FullCalendar
 *   **Backend**: Node.js, Express.js, Nodemailer
@@ -35,7 +35,7 @@ A comprehensive, role-based web application designed to streamline campus recrui
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```text
 ├── backend/
@@ -44,8 +44,8 @@ A comprehensive, role-based web application designed to streamline campus recrui
 │   ├── models/             # Mongoose schemas (User, Student, Job, Application, etc.)
 │   ├── routes/             # RESTful API route definitions
 │   ├── services/           # Background email daemon & Nodemailer utilities
-│   ├── seed.js             # Initial database seed script
-│   └── server.js           # Server entry point
+│   ├── server.js            # Server entry point
+│          
 └── frontend/
     ├── src/
     │   ├── components/     # Reusable layout & UI components
@@ -58,7 +58,7 @@ A comprehensive, role-based web application designed to streamline campus recrui
 
 ---
 
-## ⚙️ Environment Variables
+##  Environment Variables
 
 Create a `.env` file in the `backend/` directory with the following variables:
 
@@ -79,7 +79,7 @@ VITE_API_URL=http://localhost:5000/api
 
 ---
 
-## 🚀 Installation & Local Setup
+##  Installation & Local Setup
 
 ### Prerequisites
 *   Node.js (v16.x or higher)
@@ -111,7 +111,7 @@ npm run dev   # Starts Vite development server on Port 5173
 
 ---
 
-## 💡 Key Engineering Talking Points (For Interviews)
+##  Key Engineering Talking Points (For Interviews)
 When discussing this project in SDE interviews, highlight these design patterns:
 1.  **Optimistic State Updates**: Implemented on the Kanban board to shift cards immediately upon drag-and-drop, reverting them back smoothly only if the backend database transaction fails.
 2.  **State Rollback & Exception Safety**: Handled in backend status modifications where locked applications (e.g., Offered/Rejected) block client changes and return appropriate HTTP status codes.
