@@ -111,9 +111,4 @@ npm run dev   # Starts Vite development server on Port 5173
 
 ---
 
-##  Key Engineering Talking Points (For Interviews)
-When discussing this project in SDE interviews, highlight these design patterns:
-1.  **Optimistic State Updates**: Implemented on the Kanban board to shift cards immediately upon drag-and-drop, reverting them back smoothly only if the backend database transaction fails.
-2.  **State Rollback & Exception Safety**: Handled in backend status modifications where locked applications (e.g., Offered/Rejected) block client changes and return appropriate HTTP status codes.
-3.  **Background Processing & Daemon Design**: Decoupling the notification sender into an asynchronous server loop to run alongside the main Express process.
-4.  **CORS & Interceptor Architecture**: Setting request headers globally using Axios interceptors to inject JWT bearer tokens on outgoing requests, with centralized 401 Unauthorized redirect handling.
+
